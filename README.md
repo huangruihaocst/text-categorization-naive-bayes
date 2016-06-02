@@ -9,7 +9,7 @@
 
 1. Run the script.
     ```
-    $ python3 Main.py [input file name] [output file name]
+    $ python3 Main.py
     ```
 
 ####If in IDE(Pycharm)

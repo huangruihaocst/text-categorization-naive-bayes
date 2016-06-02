@@ -1,6 +1,5 @@
 import glob
 from random import shuffle
-from functools import reduce
 import re
 
 PARTS = 5
@@ -22,7 +21,7 @@ for i in range(0, PARTS):
     # step1: learning
     test = groups[i]  # take turn to be testing group
     learn = [f for f in files if f not in test]
-    vocabulary = []
+    vocabulary = set()
     marks = set()
     proportion = {}  # dict, P(ck)
     P = {}  # dict, P(wj|ck)
@@ -30,12 +29,11 @@ for i in range(0, PARTS):
         content = open(file, 'rb').read().decode('utf-8', errors='ignore')
         words = re.findall(r'\w+', content)  # only words
         m = file.split('/')[2]  # m: mark
-        vocabulary += words
+        vocabulary |= set(words)
         marks.add(m)
     for mark in marks:
         docs = [f for f in learn if f.split('/')[2] == mark]
         proportion[mark] = len(docs) / len(learn)
-        # print('P(' + mark + ') = ' + str(proportion[mark]))
         text = []
         for doc in docs:
             text += [w for w in re.findall(r'\w+', open(doc, 'rb').read().decode('utf-8', errors='ignore'))]
@@ -43,15 +41,21 @@ for i in range(0, PARTS):
         for word in vocabulary:
             occur = text.count(word)
             P[(word, mark)] = (occur + 1) / (n + len(vocabulary))  # key is tuple
-            # print('P(' + word + '|' + mark + ') = ' + str(P[(word, mark)]))
     # step2: testing
     cnt = 0
     for file in test:
         content = open(file, 'rb').read().decode('utf-8', errors='ignore')
         words = re.findall(r'\w+', content)  # only words
         positions = [w for w in words if w in vocabulary]
-        ans = max(marks, key=lambda v: proportion[v] * reduce(lambda x, y: x * y, [P[(w, v)] for w in positions]))
-        print('ans:' + ans)
+        now = -1
+        ans = list(marks)[0]
+        for mark in marks:
+            value = proportion[mark]
+            for w in positions:
+                value *= P[(w, mark)] * 2.45e3
+            if value > now:
+                now = value
+                ans = mark
         if ans == file.split('/')[2]:
             cnt += 1
     print(cnt / len(test))
